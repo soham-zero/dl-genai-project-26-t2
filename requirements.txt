@@ -6,4 +6,6 @@ transformers>=4.30.0
 datasets>=2.12.0
 sentence-transformers>=2.2.2
 faiss-cpu>=1.7.0
+accelerate>=0.20.0
+peft>=0.4.0
 tqdm>=4.65.0
