@@ -16,17 +16,19 @@ STOPWORDS = set([
 
 def clean_text_for_tfidf(text):
     """
-    Aggressive cleaning strictly for TF-IDF (lowercasing, removing punctuation, stopwords).
+    Aggressive cleaning strictly for TF-IDF (lowercasing, removing punctuation).
     Used in the baseline Model 1 implementation.
     """
     text = str(text).lower()
     text = re.sub(r'[^a-z0-9\s]', '', text)
-    # FAILED EXPERIMENT: Removing stopwords dropped MAP@3 from 0.3117 to ~0.27!
-    # It turns out that in MCQ matching, words like "not" or "is" hold critical intent signals.
-    # We are keeping this commented out to maintain the higher 0.3117 baseline.
-    # 
-    # words = text.split()
-    # words = [w for w in words if w not in STOPWORDS]
-    # return " ".join(words).strip()
-    
-    return text.strip()
+    words = text.split()
+    words = [w for w in words if w not in STOPWORDS]
+    return " ".join(words).strip()
+
+def get_options_list(row):
+    """Extracts the 5 options from a dataframe row into a clean list."""
+    return [str(row[opt]) for opt in ['A', 'B', 'C', 'D', 'E']]
+
+def format_multiple_choice(prompt, option):
+    """Concatenates a prompt and an option safely."""
+    return f"{str(prompt).strip()} {str(option).strip()}"
