@@ -1,19 +1,5 @@
 import re
 
-# A standard list of English stopwords that confuse lexical TF-IDF matching
-STOPWORDS = set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'if', 'because', 'as', 'what', 
-    'when', 'where', 'how', 'which', 'who', 'whom', 'this', 'that', 'these', 
-    'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 
-    'has', 'had', 'do', 'does', 'did', 'to', 'from', 'in', 'out', 'on', 'off', 
-    'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'all', 
-    'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 
-    'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 
-    'can', 'will', 'just', 'don', 'should', 'now', 'of', 'for', 'with', 'about', 
-    'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 
-    'below', 'up', 'down', 'by'
-])
-
 def clean_text_for_tfidf(text):
     """
     Aggressive cleaning strictly for TF-IDF (lowercasing, removing punctuation).
@@ -21,9 +7,7 @@ def clean_text_for_tfidf(text):
     """
     text = str(text).lower()
     text = re.sub(r'[^a-z0-9\s]', '', text)
-    words = text.split()
-    words = [w for w in words if w not in STOPWORDS]
-    return " ".join(words).strip()
+    return text.strip()
 
 def get_options_list(row):
     """Extracts the 5 options from a dataframe row into a clean list."""
@@ -32,3 +16,11 @@ def get_options_list(row):
 def format_multiple_choice(prompt, option):
     """Concatenates a prompt and an option safely."""
     return f"{str(prompt).strip()} {str(option).strip()}"
+
+def format_transformer_option(option_text, option_letter):
+    """
+    Formats options specifically for semantic transformer models (MiniLM/DeBERTa).
+    Unlike TF-IDF, transformers need sentence structure and punctuation intact.
+    We append the option letter to provide explicit structural cues.
+    """
+    return f"({option_letter}) {str(option_text).strip()}"
