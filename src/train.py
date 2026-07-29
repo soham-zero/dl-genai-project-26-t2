@@ -80,22 +80,23 @@ def train_model(model_name="microsoft/deberta-v3-small", train_df=None, val_df=N
     train_ds = Dataset.from_pandas(train_df[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
     val_ds = Dataset.from_pandas(val_df[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
     
-    tokenized_train = train_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=train_ds.column_names)
-    tokenized_val = val_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=val_ds.column_names)
+    tokenized_train = train_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=['prompt', 'A', 'B', 'C', 'D', 'E'])
+    tokenized_val = val_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=['prompt', 'A', 'B', 'C', 'D', 'E'])
     
     training_args = TrainingArguments(
         output_dir=f"./results_{model_name.replace('/', '_')}",
         eval_strategy="epoch",
         learning_rate=1e-5,
-        warmup_ratio=0.1,
+        warmup_steps=100,
         adam_epsilon=1e-6,
         save_strategy="epoch",
         load_best_model_at_end=True,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
-        num_train_epochs=3,
+        num_train_epochs=5,
         weight_decay=0.01,
-        fp16=True, # GPU Acceleration
+        gradient_accumulation_steps=2,
+        fp16=False, # GPU Acceleration
         report_to="none" # Disabled W&B for Session 14
     )
     
