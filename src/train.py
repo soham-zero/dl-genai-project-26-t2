@@ -11,6 +11,8 @@ from transformers import (
 from dataclasses import dataclass
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase, PaddingStrategy
 from typing import Optional, Union
+from sklearn.model_selection import train_test_split
+import os
 
 # Helper for preprocessing
 def preprocess_function(examples, tokenizer):
@@ -67,18 +69,32 @@ class DataCollatorForMultipleChoice:
         batch["labels"] = torch.tensor(labels, dtype=torch.int64)
         return batch
 
-def train_model(model_name="microsoft/deberta-v3-small", train_df=None, val_df=None):
+def train_model(train_csv_path='train.csv', model_name="microsoft/deberta-v3-small", output_dir="./models/finetuned_deberta"):
+    print(f"Loading data from {train_csv_path}")
+    df = pd.read_csv(train_csv_path)
+    df.drop_duplicates(subset=['prompt'], inplace=True)
+    
+    # Create strict 80/20 split to avoid data leakage
+    train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+    
+    print(f"Train Split: {len(train_df)} rows")
+    print(f"Validation Split: {len(val_df)} rows")
+    
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForMultipleChoice.from_pretrained(model_name)
     
     # Map letters to integer labels
     label_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4}
     
-    train_df['label'] = train_df['answer'].map(label_map)
-    val_df['label'] = val_df['answer'].map(label_map)
+    # Using .copy() to avoid SettingWithCopyWarning
+    train_df_80 = train_df.copy()
+    val_df_20 = val_df.copy()
     
-    train_ds = Dataset.from_pandas(train_df[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
-    val_ds = Dataset.from_pandas(val_df[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
+    train_df_80['label'] = train_df_80['answer'].map(label_map)
+    val_df_20['label'] = val_df_20['answer'].map(label_map)
+    
+    train_ds = Dataset.from_pandas(train_df_80[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
+    val_ds = Dataset.from_pandas(val_df_20[['prompt', 'A', 'B', 'C', 'D', 'E', 'label']])
     
     tokenized_train = train_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=['prompt', 'A', 'B', 'C', 'D', 'E'])
     tokenized_val = val_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True, remove_columns=['prompt', 'A', 'B', 'C', 'D', 'E'])
@@ -97,7 +113,7 @@ def train_model(model_name="microsoft/deberta-v3-small", train_df=None, val_df=N
         weight_decay=0.01,
         gradient_accumulation_steps=2,
         fp16=False, # GPU Acceleration
-        report_to="none" # Disabled W&B for Session 14
+        report_to="none" # Disabled W&B until Session 15
     )
     
     trainer = Trainer(
@@ -112,9 +128,10 @@ def train_model(model_name="microsoft/deberta-v3-small", train_df=None, val_df=N
     trainer.train()
     
     # Save the fine-tuned model
-    save_path = f"./models/finetuned_{model_name.replace('/', '_')}"
-    trainer.save_model(save_path)
-    print(f"Model saved to {save_path}")
+    os.makedirs(os.path.dirname(output_dir), exist_ok=True)
+    trainer.save_model(output_dir)
+    tokenizer.save_pretrained(output_dir)
+    print(f"Model saved to {output_dir}")
 
 if __name__ == "__main__":
-    print("This script is meant to be imported or run directly on Kaggle with prepared data.")
+    train_model()

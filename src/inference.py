@@ -6,27 +6,19 @@ from transformers import AutoTokenizer, AutoModelForMultipleChoice
 import os
 
 def run_inference(test_csv_path='test.csv', 
-                  deberta_model_path='./models/finetuned_microsoft_deberta-v3-small', 
-                  roberta_model_path='./models/finetuned_roberta-base',
+                  model_path='./models/finetuned_deberta', 
                   output_csv='submission.csv',
-                  batch_size=8,
-                  deberta_weight=0.70,
-                  roberta_weight=0.30):
+                  batch_size=8):
     
-    print("Loading models and tokenizers...")
-    deb_tok = AutoTokenizer.from_pretrained(deberta_model_path)
-    deb_model = AutoModelForMultipleChoice.from_pretrained(deberta_model_path)
-    
-    rob_tok = AutoTokenizer.from_pretrained(roberta_model_path)
-    rob_model = AutoModelForMultipleChoice.from_pretrained(roberta_model_path)
+    print("Loading model and tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    model = AutoModelForMultipleChoice.from_pretrained(model_path)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
     
-    deb_model.eval()
-    rob_model.eval()
-    deb_model.to(device)
-    rob_model.to(device)
+    model.eval()
+    model.to(device)
     
     test_df = pd.read_csv(test_csv_path)
     
@@ -40,19 +32,13 @@ def run_inference(test_csv_path='test.csv',
         prompts = sum([[context] * 5 for context in batch_df['prompt']], [])
         options = sum([[f"(A) {row['A']}", f"(B) {row['B']}", f"(C) {row['C']}", f"(D) {row['D']}", f"(E) {row['E']}"] for _, row in batch_df.iterrows()], [])
         
-        d_inputs = deb_tok(prompts, options, truncation=True, padding=True, return_tensors="pt")
-        d_inputs = {k: v.view(len(batch_df), 5, -1).to(device) for k, v in d_inputs.items()}
-        
-        r_inputs = rob_tok(prompts, options, truncation=True, padding=True, return_tensors="pt")
-        r_inputs = {k: v.view(len(batch_df), 5, -1).to(device) for k, v in r_inputs.items()}
+        inputs = tokenizer(prompts, options, truncation=True, padding=True, return_tensors="pt")
+        inputs = {k: v.view(len(batch_df), 5, -1).to(device) for k, v in inputs.items()}
         
         with torch.no_grad():
-            d_probs = F.softmax(deb_model(**d_inputs).logits, dim=-1).cpu().numpy()
-            r_probs = F.softmax(rob_model(**r_inputs).logits, dim=-1).cpu().numpy()
+            probs = F.softmax(model(**inputs).logits, dim=-1).cpu().numpy()
             
-        ensembled_probs = (d_probs * deberta_weight) + (r_probs * roberta_weight)
-        
-        for p in ensembled_probs:
+        for p in probs:
             top_indices = np.argsort(p)[::-1][:3]
             pred_str = " ".join([letters[idx] for idx in top_indices])
             submission_preds.append(pred_str)
