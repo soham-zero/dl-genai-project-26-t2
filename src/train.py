@@ -113,7 +113,8 @@ def train_model(train_csv_path='train.csv', model_name="microsoft/deberta-v3-sma
         weight_decay=0.01,
         gradient_accumulation_steps=2,
         fp16=False, # GPU Acceleration
-        report_to="none" # Disabled W&B until Session 15
+        report_to="wandb", # Enable W&B for Session 16
+        run_name="Model_3_DeBERTa_FineTuned"
     )
     
     trainer = Trainer(
