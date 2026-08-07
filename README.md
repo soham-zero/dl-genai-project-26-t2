@@ -1,206 +1,35 @@
-# Introduction to DL and GenAI Project [BSDA2001P] – Repository Guidelines
+# Smart MCQ Solver — IITM DL & GenAI Project
 
-Welcome to the official project repository template.
+This repository contains my end-to-end implementation for the Deep Learning and Generative AI term project. The goal of this project was to build a machine learning pipeline capable of understanding complex contextual prompts and ranking multiple-choice answers logically.
 
-This document defines the mandatory Git workflow and repository structure that must be followed throughout the course. These guidelines form part of the evaluation criteria.
+## Quick Links
 
----
+- 🚀 **[Live Deployment (Hugging Face Spaces)](https://huggingface.co/spaces/soham-zero/Smart-MCQ-Solver)** — Test the final model yourself through a web UI.
+- 📄 **[Full Project Report](Project_Report.md)** — Detailed analysis of the dataset, tokenization strategy, model architectures, and final metrics.
 
-## Purpose of This Structure
+## Final Results
 
-This repository structure ensures:
+After evaluating a TF-IDF baseline and a zero-shot MiniLM model, I achieved my best results by fine-tuning a **DeBERTa-v3-small** model specifically for the Multiple Choice QA format.
 
-- Clear milestone-wise progress tracking  
-- Proper version control practices  
-- Transparent academic evaluation  
-- Reproducibility of work  
-- Professional software engineering discipline  
+* **Kaggle Leaderboard Score (MAP@3):** `0.75353`
 
----
+## Repository Structure
 
-## Branching Strategy (Mandatory)
+The `notebooks/` folder contains milestone notebooks (milestone-1 through milestone-5) tracking incremental progress across the term, along with `final_notebook.ipynb` which is the main implementation.
 
-### 1. Main Branch (`main`)
+### final_notebook.ipynb
 
-The `main` branch must always contain:
+This notebook is the core of the project and covers three distinct approaches to the MCQ problem:
 
-- Latest working notebook  
-- Final training script  
-- Final inference script  
-- Updated reports  
-- README file  
-- Any deployment or utility scripts  
+1. **Baseline (TF-IDF + Cosine Similarity):** A classical retrieval approach using TF-IDF vectors to rank answer options by their cosine similarity to the question prompt. Served as the initial benchmark.
 
-The `main` branch should always represent the most stable and updated version of your project.
+2. **Pretrained Model (zero-shot MiniLM):** Zero-shot classification using `all-MiniLM-L6-v2` from Sentence Transformers, with no task-specific fine-tuning. Showed strong out-of-the-box performance compared to the baseline.
 
----
+3. **Fine-Tuned Model (DeBERTa-v3-small):** The final and best-performing approach. Each (question, option) pair was formatted as a multiple choice input and passed through a fine-tuned `microsoft/deberta-v3-small` model. Training used AdamW with a learning rate of 1e-5 over 5 epochs, tracked via Weights & Biases.
 
-### 2. Milestone Branches (Strict Requirement)
+The notebook also includes the final Kaggle submission generation and exports the trained model weights for deployment.
 
-For every milestone, you must:
+## Deployment
 
-1. Create a new branch.  
-2. Perform all milestone-related work inside that branch.  
-3. Commit milestone-specific code only in that branch.  
-4. Push the branch to the remote repository.  
+The trained model is deployed as a Gradio web app on Hugging Face Spaces: [Smart-MCQ-Solver](https://huggingface.co/spaces/soham-zero/Smart-MCQ-Solver). The deployment code lives directly inside that Space's repository.
 
-#### Branch Naming Convention
-
-Use the following format:
-
-```
-milestone-1
-milestone-2
-milestone-3
-```
-
-Example:
-
-```bash
-git checkout -b milestone-1
-```
-
----
-
-## Strict Rules
-
-### Do Not Delete Milestone Branches
-
-Even after merging into `main`, milestone branches must remain in the repository for:
-
-- Evaluation  
-- Progress tracking  
-- Audit purposes  
-
-Deleting milestone branches will lead to penalties.
-
-### Do Not Commit Milestone Work Directly to `main`
-
-All milestone development must first happen inside the corresponding milestone branch.
-
----
-
-## Recommended Workflow
-
-### Step 1: Create a Milestone Branch
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b milestone-1
-```
-
-### Step 2: Work on the Milestone
-
-- Add notebooks  
-- Add scripts  
-- Add documentation  
-- Commit regularly  
-
-```bash
-git add .
-git commit -m "Milestone 1: Completed data preprocessing and EDA"
-```
-
-### Step 3: Push the Branch
-
-```bash
-git push origin milestone-1
-```
-
-### Step 4: Merge into Main (After Completion)
-
-Once the milestone is complete:
-
-```bash
-git checkout main
-git merge milestone-1
-git push origin main
-```
-
-Do not delete the milestone branch after merging.
-
----
-
-## Suggested Repository Structure
-
-```
-project-name/
-│
-├── notebooks/
-│   ├── milestone-1.ipynb
-│   ├── milestone-2.ipynb
-│   └── final_notebook.ipynb
-│
-├── src/
-│   ├── train.py
-│   ├── inference.py
-│   └── utils.py
-│
-├── reports/
-│   ├── milestone-1-report.pdf
-│   ├── milestone-2-report.pdf
-│   └── final-report.pdf
-│
-├── models/
-│
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Best Practices
-
-- Commit frequently with meaningful messages  
-- Keep milestone code reproducible  
-- Avoid committing unnecessary large files  
-- Use `.gitignore` properly  
-- Maintain a clean and structured repository  
-
----
-
-## Commit Message Guidelines
-
-### Good Example
-
-```
-Milestone 2: Implemented feature engineering and baseline model
-```
-
-### Poor Examples
-
-```
-update
-changes
-final
-```
-
----
-
-## Evaluation Criteria
-
-Your grading will consider:
-
-- Proper branch usage  
-- Clear milestone separation  
-- Code organization  
-- Reproducibility  
-- Professional Git practices  
-
-Failure to follow the branching policy may result in grade deductions.
-
----
-
-## Final Note
-
-This workflow mirrors real-world industry development practices.
-
-By following it properly, you demonstrate:
-
-- Ownership  
-- Engineering maturity  
-- Clean project tracking  
-- Professional development standards  
-
-If you have any doubts, clarify before proceeding.
